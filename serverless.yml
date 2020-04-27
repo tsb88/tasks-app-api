@@ -1,4 +1,4 @@
-service: tasks-app-api
+service: tasks-app-2-api
 
 # Create an optimized package for our functions
 package:
@@ -9,24 +9,29 @@ plugins:
   - serverless-offline
   - serverless-dotenv-plugin # Load .env as environment variables
 
+custom:
+  stage: ${opt:stage, self:provider.stage}
+  tableName: ${self:custom.stage}-tasks
+
 provider:
   name: aws
   runtime: nodejs12.x
-  stage: prod
+  stage: dev
   region: us-east-1
   environment:
-    tableName: tasks
+    tableName: ${self:custom.tableName}
   iamRoleStatements:
-    - Effect: Allow
-      Action:
-        - dynamodb:DescribeTable
-        - dynamodb:Query
-        - dynamodb:Scan
-        - dynamodb:GetItem
-        - dynamodb:PutItem
-        - dynamodb:UpdateItem
-        - dynamodb:DeleteItem
-      Resource: "arn:aws:dynamodb:us-east-1:*:*"
+  - Effect: Allow
+    Action:
+      - dynamodb:DescribeTable
+      - dynamodb:Query
+      - dynamodb:Scan
+      - dynamodb:GetItem
+      - dynamodb:PutItem
+      - dynamodb:UpdateItem
+      - dynamodb:DeleteItem
+    Resource:
+      - "Fn::GetAtt": [ TasksTable, Arn ]
 
 functions:
   create:
@@ -72,3 +77,7 @@ functions:
 
 resources:
   - ${file(resources/api-gateway-errors.yml)}
+  - ${file(resources/dynamodb-table.yml)}
+  - ${file(resources/s3-bucket.yml)}
+  - ${file(resources/cognito-user-pool.yml)}
+  - ${file(resources/cognito-identity-pool.yml)}
